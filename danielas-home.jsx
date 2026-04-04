@@ -915,7 +915,7 @@ export default function DanielasHome() {
           <span style={{ fontSize: 22 }}>🏠</span>
           <div>
             <div style={{ fontSize: 16, fontWeight: "bold", color: PAL.accentSoft, letterSpacing: 1 }}>
-              Dani's Home
+              Daniel Suh's Home
             </div>
             <div style={{ fontSize: 10, color: PAL.textDim }}>Pixel Decorator</div>
           </div>
