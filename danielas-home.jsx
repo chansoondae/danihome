@@ -143,7 +143,10 @@ const CATEGORIES = [
 
 // ─── Pixel Drawing Helpers ───
 const P = PIXEL;
-const CELL = P * 8;
+// CELL is now computed dynamically per room in the component; this module-level
+// constant is kept only for draw functions that reference it at render time via
+// the closure supplied by the component (see useDynamicCell).
+let CELL = P * 8;
 
 function rect(ctx, x, y, w, h, color) {
   ctx.fillStyle = color;
@@ -705,8 +708,26 @@ export default function DanielasHome() {
   const [frame, setFrame] = useState(0);
   const [showHelp, setShowHelp] = useState(true);
   const [itemCount, setItemCount] = useState(0);
+  const [windowWidth, setWindowWidth] = useState(430);
+
+  // Initialise showHelp from localStorage (avoids SSR issues)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setShowHelp(localStorage.getItem("dani_help_dismissed") !== "1");
+      setWindowWidth(window.innerWidth);
+      const handleResize = () => setWindowWidth(window.innerWidth);
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }
+  }, []);
 
   const room = ROOMS[currentRoom];
+
+  // Dynamic CELL size: fill ~95 % of screen width, clamped to [20, 40]
+  const dynamicCell = Math.max(20, Math.min(40, Math.floor((windowWidth * 0.95) / room.width)));
+  // Update the module-level CELL so all draw functions pick up the new size
+  CELL = dynamicCell;
+
   const canvasW = room.width * CELL;
   const canvasH = room.height * CELL;
 
@@ -885,6 +906,42 @@ export default function DanielasHome() {
     setPlacedItems((prev) => ({ ...prev, [currentRoom]: [] }));
   }
 
+  // Touch event helpers
+  function getTouchCell(e) {
+    const touch = e.touches[0] || e.changedTouches[0];
+    const r = canvasRef.current.getBoundingClientRect();
+    const scaleX = canvasW / r.width;
+    const scaleY = canvasH / r.height;
+    const cx = Math.floor(((touch.clientX - r.left) * scaleX) / CELL);
+    const cy = Math.floor(((touch.clientY - r.top) * scaleY) / CELL);
+    return { cx, cy };
+  }
+
+  function handleTouchStart(e) {
+    e.preventDefault();
+  }
+
+  function handleTouchMove(e) {
+    e.preventDefault();
+    if (!selectedItem) {
+      setHoverCell(null);
+      return;
+    }
+    const { cx, cy } = getTouchCell(e);
+    setHoverCell({ x: cx, y: cy });
+  }
+
+  function handleTouchEnd(e) {
+    e.preventDefault();
+    // Reuse handleCanvasClick logic with synthetic coords derived from touch
+    const touch = e.changedTouches[0] || e.touches[0];
+    const syntheticEvent = {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+    };
+    handleCanvasClick(syntheticEvent);
+  }
+
   const filteredItems = category === "all" ? ITEMS : ITEMS.filter((i) => i.category === category);
 
   return (
@@ -972,7 +1029,12 @@ export default function DanielasHome() {
             Click empty space to move Dani!
           </span>
           <button
-            onClick={() => setShowHelp(false)}
+            onClick={() => {
+              setShowHelp(false);
+              if (typeof window !== "undefined") {
+                localStorage.setItem("dani_help_dismissed", "1");
+              }
+            }}
             style={{
               background: "none",
               border: "none",
@@ -993,7 +1055,6 @@ export default function DanielasHome() {
           display: "flex",
           gap: 2,
           padding: "8px 8px 0",
-          overflowX: "auto",
           flexShrink: 0,
         }}
       >
@@ -1006,20 +1067,30 @@ export default function DanielasHome() {
               setHoverCell(null);
             }}
             style={{
+              flex: 1,
               background: currentRoom === key ? PAL.accent : PAL.panel,
               border: "none",
               color: currentRoom === key ? "#fff" : PAL.textDim,
-              padding: "6px 12px",
+              padding: "6px 4px",
               borderRadius: "8px 8px 0 0",
               cursor: "pointer",
-              fontSize: 11,
+              fontSize: currentRoom === key ? 11 : 16,
               fontWeight: currentRoom === key ? "bold" : "normal",
               fontFamily: "inherit",
               whiteSpace: "nowrap",
               transition: "all 0.15s",
+              minHeight: 44,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 2,
             }}
           >
-            {r.emoji} {r.name}
+            <span style={{ fontSize: 18, lineHeight: 1 }}>{r.emoji}</span>
+            {currentRoom === key && (
+              <span style={{ fontSize: 9 }}>{r.name}</span>
+            )}
           </button>
         ))}
       </div>
@@ -1043,6 +1114,9 @@ export default function DanielasHome() {
           onClick={handleCanvasClick}
           onMouseMove={handleCanvasMove}
           onMouseLeave={() => setHoverCell(null)}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           style={{
             maxWidth: "100%",
             maxHeight: "100%",
@@ -1051,6 +1125,7 @@ export default function DanielasHome() {
             borderRadius: 4,
             boxShadow: `0 0 20px ${PAL.accent}33, 0 4px 12px #0008`,
             border: `2px solid ${PAL.accent}44`,
+            touchAction: "none",
           }}
         />
       </div>
@@ -1061,6 +1136,10 @@ export default function DanielasHome() {
           background: PAL.panel,
           borderTop: `2px solid ${PAL.accent}44`,
           flexShrink: 0,
+          maxHeight: "45vh",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         {/* Category Filter + Actions */}
@@ -1082,13 +1161,14 @@ export default function DanielasHome() {
                 background: category === cat.id ? PAL.gold + "33" : "transparent",
                 border: category === cat.id ? `1px solid ${PAL.gold}66` : "1px solid transparent",
                 color: category === cat.id ? PAL.gold : PAL.textDim,
-                padding: "3px 8px",
+                padding: "8px 12px",
                 borderRadius: 10,
                 cursor: "pointer",
                 fontSize: 10,
                 fontFamily: "inherit",
                 whiteSpace: "nowrap",
                 transition: "all 0.15s",
+                minHeight: 44,
               }}
             >
               {cat.emoji} {cat.name}
@@ -1105,11 +1185,12 @@ export default function DanielasHome() {
                 background: PAL.accent + "44",
                 border: "1px solid " + PAL.accent,
                 color: PAL.accent,
-                padding: "3px 10px",
+                padding: "8px 12px",
                 borderRadius: 10,
                 cursor: "pointer",
                 fontSize: 10,
                 fontFamily: "inherit",
+                minHeight: 44,
               }}
             >
               ✕ Deselect
@@ -1121,11 +1202,12 @@ export default function DanielasHome() {
               background: "#e74c3c22",
               border: "1px solid #e74c3c44",
               color: "#e74c3c",
-              padding: "3px 10px",
+              padding: "8px 12px",
               borderRadius: 10,
               cursor: "pointer",
               fontSize: 10,
               fontFamily: "inherit",
+              minHeight: 44,
             }}
           >
             🗑 Clear
@@ -1135,11 +1217,13 @@ export default function DanielasHome() {
         {/* Items Grid */}
         <div
           style={{
-            display: "flex",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))",
             gap: 6,
             padding: "8px",
-            overflowX: "auto",
-            minHeight: 72,
+            overflowY: "auto",
+            maxHeight: 160,
+            flex: 1,
           }}
         >
           {filteredItems.map((item) => (
@@ -1161,13 +1245,12 @@ export default function DanielasHome() {
                 borderRadius: 8,
                 cursor: "pointer",
                 padding: "6px 8px",
-                minWidth: 70,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 gap: 3,
-                flexShrink: 0,
                 transition: "all 0.15s",
+                minHeight: 44,
               }}
             >
               <ItemPreview item={item} />
