@@ -4,23 +4,23 @@ const PIXEL = 4;
 
 // ─── Color Palettes ───
 const PAL = {
-  bg: "#1a1a2e",
-  panel: "#16213e",
-  panelLight: "#1a2744",
-  accent: "#e94560",
-  accentSoft: "#ff6b81",
-  gold: "#f7d794",
-  green: "#78e08f",
-  blue: "#82ccdd",
-  purple: "#a29bfe",
+  bg: "#fff0f5",
+  panel: "#ffe4f0",
+  panelLight: "#ffd6e8",
+  accent: "#ff6eb4",
+  accentSoft: "#ff9dcf",
+  gold: "#ffdd57",
+  green: "#5edc8a",
+  blue: "#5bc8f5",
+  purple: "#c77dff",
   wood: "#cd8d5e",
   woodDark: "#a0724a",
-  cream: "#ffeaa7",
-  white: "#f8f9fa",
-  gray: "#636e72",
-  darkGray: "#2d3436",
-  text: "#dfe6e9",
-  textDim: "#a0a8b0",
+  cream: "#fff9c4",
+  white: "#ffffff",
+  gray: "#c9a0c9",
+  darkGray: "#7a5c7a",
+  text: "#5c3d5c",
+  textDim: "#a07898",
 };
 
 // ─── Room Definitions ───
@@ -28,45 +28,45 @@ const ROOMS = {
   living: {
     name: "Living Room",
     emoji: "🛋️",
-    floorColor: "#8B7355",
-    wallColor: "#D4C5A9",
-    wallAccent: "#C4B599",
+    floorColor: "#f5d08a",
+    wallColor: "#FFF0A0",
+    wallAccent: "#FFE066",
     width: 14,
     height: 10,
   },
   bedroom1: {
     name: "Dani's Bedroom",
     emoji: "🛏️",
-    floorColor: "#9B8B75",
-    wallColor: "#C9B8D4",
-    wallAccent: "#B9A8C4",
+    floorColor: "#f0a8c8",
+    wallColor: "#FFB3D9",
+    wallAccent: "#FF85C0",
     width: 12,
     height: 10,
   },
   bedroom2: {
     name: "Guest Room",
     emoji: "🌙",
-    floorColor: "#8B8575",
-    wallColor: "#A9C4D4",
-    wallAccent: "#99B4C4",
+    floorColor: "#90cce8",
+    wallColor: "#B3E5FC",
+    wallAccent: "#7DCEF5",
     width: 10,
     height: 9,
   },
   kitchen: {
     name: "Kitchen",
     emoji: "🍳",
-    floorColor: "#B0A090",
-    wallColor: "#E8E0D0",
-    wallAccent: "#D8D0C0",
+    floorColor: "#90d8a0",
+    wallColor: "#C8F5C8",
+    wallAccent: "#8EE89E",
     width: 12,
     height: 9,
   },
   bathroom: {
     name: "Bathroom",
     emoji: "🚿",
-    floorColor: "#A0B0B8",
-    wallColor: "#D0E0E8",
-    wallAccent: "#C0D0D8",
+    floorColor: "#c8a8f0",
+    wallColor: "#E0C8FF",
+    wallAccent: "#C89EFF",
     width: 8,
     height: 8,
   },
@@ -972,7 +972,7 @@ export default function DanielasHome() {
           <span style={{ fontSize: 22 }}>🏠</span>
           <div>
             <div style={{ fontSize: 16, fontWeight: "bold", color: PAL.accentSoft, letterSpacing: 1 }}>
-              Daniel Suh's Home
+              Daniela Suh's Home
             </div>
             <div style={{ fontSize: 10, color: PAL.textDim }}>Pixel Decorator</div>
           </div>
